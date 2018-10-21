@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# config -- no need to modify the script if you use a torrent client other than deluge :)
+DEBUG=0
+IFCONFIG=/sbin/ifconfig
+INTERFACE=tun0
+CLIENT=deluge-gtk
+
+sleep 2 # give the client a moment to boot up
+
+if [ "$DEBUG" == "1" ]; then
+  echo "$(date) VPN Killswitch has been initiated" | sudo tee --append /var/log/"$CLIENT"-kill.log >> /dev/null
+fi
+
+# see if a vpn tunnel interface is active.  if not, terminate the torrent client process
+function vpnCheck() {
+
+  if [ "$DEBUG" == "1" ]; then
+    echo "$(date) vpnCheck function triggered" | sudo tee --append /var/log/"$CLIENT"-kill.log >> /dev/null
+  fi
+
+  # if tun0 is off, kill any process for deluge-gtk
+  if [ "$(${IFCONFIG} -a | grep ${INTERFACE})" == "" ]; then
+
+    sudo killall "$CLIENT"
+    if [ "$DEBUG" == "1" ]; then
+      echo "${INTERFACE} interface is down, terminating ${CLIENT}..."
+    fi
+
+    echo "$(date) ${INTERFACE} not detected; ${CLIENT} terminated" | sudo tee --append /var/log/"$CLIENT"-kill.log >> /dev/null
+    exit 0
+  fi
+
+}
+
+
+# execute the validation function
+if [ ! "$(${IFCONFIG} -a | grep ${INTERFACE})" == "" ]; then
+
+  while pgrep "$CLIENT" > /dev/null;
+
+    if [ "$DEBUG" == "1" ]; then
+      echo "${CLIENT} is currently active."
+    fi
+
+    do
+      vpnCheck
+      sleep 1
+    done
+
+  if [ "$DEBUG" == "1" ]; then
+    echo "${CLIENT} is not running."
+  fi
+
+  echo "$(date) VPN Killswitch triggered while ${CLIENT} was inactive" | sudo tee --append /var/log/"$CLIENT"-kill.log >> /dev/null
+fi
