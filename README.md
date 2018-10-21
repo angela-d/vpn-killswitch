@@ -7,7 +7,7 @@ I've only tested it with Deluge on Gnome desktop on Debian, but it should work w
 
 This script can be *easily* modified to work with any application you want to bind to a particular network interface.
 
-In most circumstances, iptables would be the easiest method to bind applications, but based on my trials, the desktop gtk version of Deluge does not play nice with it.
+In most circumstances, iptables would be the easiest method to bind applications to the desired network interface, but based on my trials, the desktop gtk version of Deluge does not play nice with it, so this method is application-based binding to the interface, as an alternative.
 
 ## Pre-requisites
 * This script will not work in Windows.  Pick a [cooler operating system](https://www.debian.org/distrib/) to use it.
@@ -25,7 +25,7 @@ apt update && apt install net-tools
 ***
 - The user that runs the torrent client needs sudo permissions.
 
-Launch the torrent application and then run the following in your terminal (replace *deluge* for the name of your torrent client -- also take note of the binary executable that the application runs as; in my case, it's *deluge-gtk*):
+Launch the torrent application and then run the following in your terminal (replace *deluge* for the name of your torrent client -- also take note of the application launcher that the torrent client runs as; in my case, it's *deluge-gtk*):
 ```bash
 ps aux | grep deluge
 ```
@@ -47,7 +47,7 @@ angela ALL=(ALL) NOPASSWD: ALL
 ***
 ### Once these requirements are met, you're ready to use the VPN Killswitch.
 
-* Download the [vpn-killswitch](vpn-killswitch) script somewhere.. I put mine in /home/angela/.config/vpn-killswitch
+* Download/clone the **vpn-check** script somewhere.. I put mine in /home/angela/.config/vpn-killswitch/
 
 ### Use Git to install the VPN Killswitch to ~/.config
 ```bash
