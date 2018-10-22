@@ -110,3 +110,12 @@ If you want to tweak your VPN Killswitch, you can enable debug mode to get verbo
 
 ### Known Bugs
 If you launch your torrent application while offline (ie. no internet connection at all), even though VPN Killswitch is triggered, it doesn't carry out its duties.  It needs to be launched on a live connection -- it starts working right away, so this bug is really only limited to testing scenarios.
+
+**Launch your torrenting application *after* your VPN has been turned on.**
+
+# Thoroughly test this setup before you leave it unattended.
+ie. Unplug your ethernet or disable your wifi while it's running, switch off your VPN (doing so you run the risk of exposure, so if possible, set your wifi/ethernet DNS to 127.0.0.1 to loopback, rather than reach your seeders while testing)
+
+Debug behaves differently than non-debug!  If you encounter bugs or issues, [please submit a bug report](https://notabug.org/angela/vpn-killswitch/issues) detailing the torrent client/application and operating system you're using, as well as:
+- Output from `ps aux | grep [torrent client name]`
+- and `ps S`
