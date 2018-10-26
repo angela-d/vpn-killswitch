@@ -35,15 +35,20 @@ Returns the following output:
 
 For my situation, **angela** needs sudo permissions.
 
+(replace *angela* for your user that runs your torrent client (remember earlier when you ran the `ps aux` command?))
+
 You can double-check (or add) permissions by running:
 ```bash
 visudo
 ```
 And look for **NOPASSWD** alongside the user your torrent client runs as; if such a line doesn't exist, add it beneath `root    ALL=(ALL:ALL) ALL`:
 ```bash
-angela ALL=(ALL) NOPASSWD: ALL
+angela ALL=(ALL) NOPASSWD: /usr/bin/deluge-gtk, /home/angela/.config/vpn-killswitch
 ```
-(replace *angela* for your user that runs your torrent client (remember earlier when you ran the `ps aux` command?))
+- Substitute `/usr/bin/deluge-gtk` for your torrent client path, which can be found by running `whereis [torrent client]` -- the later allowance is the directory you plan to clone VPN killswitch to.
+
+This step allows your user to execute commands against your torrent client and terminate it without having to bug you before it kills the process once termination conditions are met.
+
 ***
 ### Once these requirements are met, you're ready to use the VPN Killswitch.
 
