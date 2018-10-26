@@ -43,7 +43,7 @@ visudo
 ```
 And look for **NOPASSWD** alongside the user your torrent client runs as; if such a line doesn't exist, add it beneath `root    ALL=(ALL:ALL) ALL`:
 ```bash
-angela ALL=(ALL) NOPASSWD: /usr/bin/deluge-gtk, /home/angela/.config/vpn-killswitch
+angela ALL=NOPASSWD: /usr/bin/deluge-gtk, /home/angela/.config/vpn-killswitch
 ```
 - Substitute `/usr/bin/deluge-gtk` for your torrent client path, which can be found by running `whereis [torrent client]` -- the later allowance is the directory you plan to clone VPN killswitch to.
 
