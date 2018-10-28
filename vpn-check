@@ -40,9 +40,11 @@ function extinct() {
 
 
 function vpnCheck() {
-
-  logMessage "vpnCheck function triggered"
-
+  if [ "$DEBUG" == "1" ];
+  then
+    logMessage "vpnCheck function triggered"
+  fi
+  
   # trigger an infinite loop, until the client is closed or tunnel is dropped
   while true;
     do
