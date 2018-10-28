@@ -1,56 +1,82 @@
 #!/bin/bash
 
-# config -- no need to modify the script if you use a torrent client other than deluge :)
-DEBUG=0
-IFCONFIG=/sbin/ifconfig
-INTERFACE=tun0
-CLIENT=deluge-gtk
+# config -- no need to modify the entire script if you use a torrent client other than deluge :)
+DEBUG=0                   # excessive logging output to log file and terminal screen (when triggered direct) - use wisely!!
+IFCONFIG=/sbin/ifconfig   # whereis ifconfig
+INTERFACE=tun0            # ip a
+CLIENT=deluge-gtk         # ps aux | grep [name of torrent client]
+CLI=0                     # leave 0 if you are using the desktop launcher method
+DIR=$(dirname "$0")
 
-sleep 2 # give the client a moment to boot up
+# if the client is running already, a torrent dl might be being passed as an argument (%U), so feed it to the client and die
+if [ ! "$(pgrep -a $CLIENT)" == "" ] && [ $CLI == 0 ];
+then
 
-if [ "$DEBUG" == "1" ]; then
-  echo "$(date) VPN Killswitch has been initiated" | sudo tee --append /var/log/"$CLIENT"-kill.log >> /dev/null
+  "$CLIENT" "$1"
+  exit 0
 fi
 
-# see if a vpn tunnel interface is active.  if not, terminate the torrent client process
-function vpnCheck() {
+function logMessage() {
 
-  if [ "$DEBUG" == "1" ]; then
-    echo "$(date) vpnCheck function triggered" | sudo tee --append /var/log/"$CLIENT"-kill.log >> /dev/null
-  fi
-
-  # if tun0 is off, kill any process for deluge-gtk
-  if [ "$(${IFCONFIG} -a | grep ${INTERFACE})" == "" ]; then
-
-    sudo killall "$CLIENT"
-    if [ "$DEBUG" == "1" ]; then
-      echo "${INTERFACE} interface is down, terminating ${CLIENT}..."
-    fi
-
-    echo "$(date) ${INTERFACE} not detected; ${CLIENT} terminated" | sudo tee --append /var/log/"$CLIENT"-kill.log >> /dev/null
-    exit 0
-  fi
-
+  # always log to vpn-check directory
+  echo "$(date) $1" >> "$DIR"/"$CLIENT"-kill.log
 }
 
 
-# execute the validation function
-if [ ! "$(${IFCONFIG} -a | grep ${INTERFACE})" == "" ]; then
+function extinct() {
 
-  while pgrep "$CLIENT" > /dev/null;
+  logMessage "${INTERFACE} interface or ${CLIENT} process is down, terminating ${CLIENT} to be safe..."
 
-    if [ "$DEBUG" == "1" ]; then
-      echo "${CLIENT} is currently active."
-    fi
-
-    do
-      vpnCheck
-      sleep 1
-    done
-
-  if [ "$DEBUG" == "1" ]; then
-    echo "${CLIENT} is not running."
+  if [ $CLI == 1 ];
+  then
+    echo -e "\e[31m${INTERFACE} interface or ${CLIENT} missing, performing a kill signal...\e[0m"
   fi
 
-  echo "$(date) VPN Killswitch triggered while ${CLIENT} was inactive" | sudo tee --append /var/log/"$CLIENT"-kill.log >> /dev/null
+  # forcefully terminate, otherwise if we wait for it to gracefully close, there's risk of exposure outside of the vpn
+  pkill -f $CLIENT -9
+  # for good measure, clean exit
+  exit 0
+}
+
+
+function vpnCheck() {
+
+  logMessage "vpnCheck function triggered"
+
+  # trigger an infinite loop, until the client is closed or tunnel is dropped
+  while true;
+    do
+      sleep 1
+
+      if [ ! "$($IFCONFIG | grep $INTERFACE)" == "" ] && [ ! "$(pgrep -a $CLIENT)" == "" ]; then
+
+        # everything is working, do nothing
+        if [ "$DEBUG" == "1" ];
+        then
+          logMessage "${CLIENT} and ${INTERFACE} are active"
+        fi
+      else
+
+        # no tunnel or client process detected; terminating
+        extinct
+      fi
+    done
+}
+
+### startup
+if [ "$DEBUG" == "1" ];
+then
+  logMessage "VPN Killswitch has been initiated"
 fi
+
+if [ $CLI == 0 ];
+then
+  # launch the torrent client as it's own parent process
+  nohup "$CLIENT" &
+else
+  # give the torrent client a moment to boot before we start thumping out processes
+  echo -e "\e[32m>> VPN Killswitch has been initiated! <<\e[0m  \nIf $CLIENT isn't boot immediately after the killswitch is launched, it will be terminated; so start services accordingly!"
+  sleep 5
+fi
+
+vpnCheck
