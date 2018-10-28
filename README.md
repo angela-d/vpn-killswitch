@@ -3,14 +3,24 @@ When you're torrenting cooking recipes for your grandmother, you deserve your ri
 
 This script will bind to your torrent application and terminate it's process if your VPN tunnel is lost.
 
-I've only tested it with Deluge on Gnome desktop on Debian, but it should work with any torrent client in any desktop environment (with minor adjustments).
+![cli output](./img/cli-screen.png)
 
-This script can be *easily* modified to work with any application you want to bind to a particular network interface.
+### How it works
+It works by (you) replacing the launcher execute command with VPN Killswitch, VPN Killswitch will then launch the torrent client, so it's able to bind to it, without modifying the client core.  *(The desktop launcher version) also prevents the torrent application from even being launched if the VPN is not on.*
 
-In most circumstances, iptables would be the easiest method to bind applications to the desired network interface, but based on my trials, the desktop gtk version of Deluge does not play nice with it, so this method is application-based binding to the interface, as an alternative.
+### Why not do similar behavior with Iptables, or Deluge's built-in network filter?
+In most circumstances, iptables would be the easiest method to bind applications to the desired network interface, but based on my trials, the *desktop gtk* version of Deluge does not play nice with it, so this method is application-based binding to the interface, as an alternative.
+
+If you're using the server version of Deluge, you can probably utilize Iptables or the built-in network filter (Edit > Preferences > Network > enter your tunnel IP in the interface field).
+
+I've only tested the killswitch with Deluge on Gnome desktop on Debian, but it should work with any torrent client in any desktop environment (with basic config adjustments).
+
+This script can also be *easily* modified to work with any application you want to bind to a particular network interface.
+
+
 
 ## Pre-requisites
-* This script will not work in Windows.  Pick a [cooler operating system](https://www.debian.org/distrib/) to use it.
+* This script will not work in Windows.  Pick a [cooler operating system](https://www.debian.org/distrib/) to use it.  May work in Mac or BSD with minor tweaks needed, but untested.
 ***
 - ifconfig
 
@@ -22,8 +32,7 @@ If you don't see a path returned, you'll need to install the net-tools package (
 ```bash
 apt update && apt install net-tools
 ```
-***
-- The user that runs the torrent client needs sudo permissions.
+* We need to know the torrent client's executable
 
 Launch the torrent application and then run the following in your terminal (replace *deluge* for the name of your torrent client -- also take note of the application launcher that the torrent client runs as; in my case, it's *deluge-gtk*):
 ```bash
@@ -33,21 +42,8 @@ Returns the following output:
 
 > *angela*    2913  0.0  0.0  11176  2988 tty1     S+   05:07   0:00 **deluge-gtk**
 
-For my situation, **angela** needs sudo permissions.
+For my situation, **deluge-gtk** is my torrent client executable.
 
-(replace *angela* for your user that runs your torrent client (remember earlier when you ran the `ps aux` command?))
-
-You can double-check (or add) permissions by running:
-```bash
-visudo
-```
-And look for **NOPASSWD** alongside the user your torrent client runs as; if such a line doesn't exist, add it beneath `root    ALL=(ALL:ALL) ALL`:
-```bash
-angela ALL=NOPASSWD: /usr/bin/deluge-gtk, /home/angela/.config/vpn-killswitch
-```
-- Substitute `/usr/bin/deluge-gtk` for your torrent client path, which can be found by running `whereis [torrent client]` -- the later allowance is the directory you plan to clone VPN killswitch to.
-
-This step allows your user to execute commands against your torrent client and terminate it without having to bug you before it kills the process once termination conditions are met.
 
 ***
 ### Once these requirements are met, you're ready to use the VPN Killswitch.
@@ -60,6 +56,8 @@ git clone https://github.com/angela-d/vpn-killswitch.git ~/.config/vpn-killswitc
 ```
 
 ### Bind VPN Killswitch to Your Torrent Application
+***
+## If using the desktop version of Deluge: the following will force the launcher to bind with the killswitch
 This method utilizes the desktop application launcher; which will be different if you're running the torrent client as a headless application.
 - See if you have an existing launcher:
 ```bash
@@ -78,16 +76,34 @@ Example command.  As always, adjust the specific path relative to your system:
 pico ~/.local/share/applications/deluge.desktop
 ```
 
-Look for this line (replace deluge.gtk for your torrent client's executable):
+Look for this line (replace deluge-gtk for your torrent client's executable):
 ```bash
 Exec="deluge-gtk %U"
 ```
 
-Change that line to:
+Change that line to point to your VPN Killswitch directory and the validation script:
 ```bash
-Exec=bash -c "deluge-gtk %U;  /home/angela/.config/vpn-killswitch/vpn-check"
+Exec=/home/angela/.config/vpn-killswitch/vpn-check %U
 ```
+`%U` allows arguments to be passed, such as URLs for downloads.  If your torrent client accepts magnets and downloads another way, adjust accordingly; as well as adjusting the additional `%U` pass inside `vpn-check` (if necessary).
+
 *If your vpn-killswitch directory wasn't saved to your /home/user/ folder, modify the path in my example to suit your environment.*
+***
+## Run a cron/standalone (no desktop launcher)
+Skip this part if you've set the killswitch to bind to the desktop launcher.
+
+**Don't** set a cron for `* * * *` as there's an infinite loop built in for the duration of the tunnel and client's session.
+
+In the `vpn-check` script, set the CLI variable to true, like so and it will loop forever, so as long as the torrent client *and* the VPN interface remain active:
+```bash
+CLI=1  # leave 0 if you are using the desktop launcher method
+```
+
+In your terminal, navigate to the directory where VPN Killswitch is home to `cd ~/.config/vpn-killswitch` and run:
+```bash
+./vpn-check
+```
+to set the validation.  If you want it to run in the background: `./vpn-check &`
 ***
 # Mandatory Config
 Before you can use the script, you must modify the config variables to reflect your torrent client.
@@ -107,20 +123,22 @@ If you want to tweak your VPN Killswitch, you can enable debug mode to get verbo
 - Open `vpn-check`
 - Change `DEBUG=0` to `DEBUG=1`
 - Launch your torrent application
-- View log output at `/var/log/[your torrent-client]-kill.log`
+- View log output at `/your/vpn-killswitch/destination/[your torrent-client]-kill.log` ie. mine is at: `/home/angela/.config/vpn-killswitch/deluge-gtk-kill.log`
 
-*Be sure to disable debug mode when you're done with it, or you'll find your log directory eating space on your hard drive!*
+To view live log output content, `tail -f` as `tail -f/home/angela/.config/vpn-killswitch/deluge-gtk-kill.log`
 
-**In normal (non-debug) mode, torrent client terminations initiated by VPN killswitch are always logged to `/var/log/[your torrent-client]-kill.log`.**
+*Be sure to disable debug mode when you're done with it, or you'll find the log rapidly eating space on your hard drive!*
 
-### Known Bugs
-If you launch your torrent application while offline (ie. no internet connection at all), even though VPN Killswitch is triggered, it doesn't carry out its duties.  It needs to be launched on a live connection -- it starts working right away, so this bug is really only limited to testing scenarios.
+![debug mode](./img/debug-mode.png)
 
-**Launch your torrenting application *after* your VPN has been turned on.**
+**In normal (non-debug) mode, torrent client terminations initiated by VPN killswitch are always logged to `/your/directory/vpn-killswitch/[your torrent-client]-kill.log`.**
+
 
 # Thoroughly test this setup before you leave it unattended.
 ie. Unplug your ethernet or disable your wifi while it's running, switch off your VPN (doing so you run the risk of exposure, so if possible, set your wifi/ethernet DNS to 127.0.0.1 to loopback, rather than reach your seeders while testing)
 
-Debug behaves differently than non-debug!  If you encounter bugs or issues, [please submit a bug report](https://notabug.org/angela/vpn-killswitch/issues) detailing the torrent client/application and operating system you're using, as well as:
+Debug may behave differently than non-debug!  Calling the script from the terminal vs a desktop launcher may also behave differently!  *TEST IT*.
+
+ If you encounter bugs or issues, [please submit a bug report](https://notabug.org/angela/vpn-killswitch/issues) detailing the torrent client/application and operating system you're using, as well as:
 - Output from `ps aux | grep [torrent client name]`
 - and `ps S`
