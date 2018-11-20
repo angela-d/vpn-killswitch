@@ -7,6 +7,7 @@ INTERFACE=tun0            # ip a
 CLIENT=deluge-gtk         # ps aux | grep [name of torrent client]
 CLI=0                     # leave 0 if you are using the desktop launcher method
 DIR=$(dirname "$0")
+LOGPATH="$DIR"/"$CLIENT"-kill.log
 
 # if the client is running already, a torrent dl might be being passed as an argument (%U), so feed it to the client and die
 if [ ! "$(pgrep -a $CLIENT)" == "" ] && [ $CLI == 0 ];
@@ -19,7 +20,7 @@ fi
 function logMessage() {
 
   # always log to vpn-check directory
-  echo "$(date) $1" >> "$DIR"/"$CLIENT"-kill.log
+  echo "$(date) $1" >> "$LOGPATH"
 }
 
 
@@ -30,6 +31,16 @@ function extinct() {
   if [ $CLI == 1 ];
   then
     echo -e "\e[31m${INTERFACE} interface or ${CLIENT} missing, performing a kill signal...\e[0m"
+  else
+
+    # throw a notification on desktop that the vpn signal was lost
+    if [ -f /usr/bin/notify-send ];
+    then
+      notify-send -i error "VPN Connection Lost, Killswitch Activated" \
+      -u critical \
+      "See $LOGPATH\
+      \rfor details."
+    fi
   fi
 
   # forcefully terminate, otherwise if we wait for it to gracefully close, there's risk of exposure outside of the vpn
@@ -44,7 +55,7 @@ function vpnCheck() {
   then
     logMessage "vpnCheck function triggered"
   fi
-  
+
   # trigger an infinite loop, until the client is closed or tunnel is dropped
   while true;
     do
