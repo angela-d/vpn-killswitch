@@ -1,4 +1,7 @@
 # VPN Killswitch for Torrents on Linux Desktop
+
+![killswitch notice](./img/killswitch-notice.png)
+
 When you're torrenting cooking recipes for your grandmother, you deserve your right to privacy.  It isn't your ISPs business what type of cookies she likes to bake.
 
 This script will bind to your torrent application and terminate it's process if your VPN tunnel is lost.
