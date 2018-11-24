@@ -1,6 +1,0 @@
-#!/bin/bash
-
-# clear the icon cache so the launcher has its icon
-gtk-update-icon-cache /usr/share/icons/hicolor
-
-exit 0

@@ -1,7 +1,0 @@
-7c67de279e12583f23fd094bf72a0628  usr/bin/vpn-check
-abc42ce703b417823986fba8e62cc2b1  usr/bin/vpn-killswitch
-dc199e0b7a3df36298b853c5411b41f3  usr/share/applications/vpn-killswitch.desktop
-1f47720124417752980bbc191cb751d9  usr/share/doc/vpn-killswitch/changelog.gz
-7529e9b480d6fb546a3eed3fb8a75447  usr/share/doc/vpn-killswitch/copyright
-0a58fce69cc6abd86e22d76cab545b02  usr/share/icons/hicolor/scalable/apps/vpn-killswitch.svg
-ef8e5182b7dc506b224cd4e899ded5a9  usr/share/man/man1/vpn-killswitch.1.gz
