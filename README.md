@@ -4,12 +4,22 @@
 
 When you're torrenting cooking recipes for your grandmother, you deserve your right to privacy.  It isn't your ISPs business what type of cookies she likes to bake.
 
-This script will bind to your torrent application and terminate it's process if your VPN tunnel is lost.
+This script will bind to your torrent application, monitor its existence and terminate it's process if your VPN tunnel is lost.
 
+### GUI and CLI options
+![gui screens](./img/gui-screen.png)
+
+### Easily access configuration
+![gui screen](./img/launcher.png)
+
+CLI:
 ![cli output](./img/cli-screen.png)
 
 ### How it works
-It works by (you) replacing the launcher execute command with VPN Killswitch, VPN Killswitch will then launch the torrent client, so it's able to bind to it, without modifying the client core.  *(The desktop launcher version) also prevents the torrent application from even being launched if the VPN is not on.*
+The killswitch overrides the launch of the torrent application and launches it as a subclient, so it can monitor the presence of the VPN tunnel.
+The killswitch is able to bind to it, without modifying the torrent app core. (Removal of the .desktop launcher the killswitch modified will restore your original setup.)
+
+*(The desktop launcher version) also prevents the torrent application from even being launched if the VPN is not on.*
 
 ### Why not do similar behavior with Iptables, or Deluge's built-in network filter?
 In most circumstances, iptables would be the easiest method to bind applications to the desired network interface, but based on my trials, the *desktop gtk* version of Deluge does not play nice with it, so this method is application-based binding to the interface, as an alternative.
@@ -20,21 +30,39 @@ I've only tested the killswitch with Deluge on Gnome desktop on Debian, but it s
 
 This script can also be *easily* modified to work with any application you want to bind to a particular network interface.
 
+## The GUI/graphical user interface version will automatically detect and configure your torrent application to work with the killswitch.
 
+# Compatible operating systems
+- GUI version: Debian/Ubuntu-based Linux distros
+- CLI version: Any Linux distro; Mac or BSD-based systems may work with minor tweaking, but not tested.
 
-## Pre-requisites
-* This script will not work in Windows.  Pick a [cooler operating system](https://www.debian.org/distrib/) to use it.  May work in Mac or BSD with minor tweaks needed, but untested.
+# Install
+- Debian / Ubuntu-based distros: use the .deb installer:
+```bash
+cd /tmp && wget https://github.com/angela-d/vpn-killswitch/blob/master/vpn-killswitch.deb -O vpn-killswitch.deb && apt install ./vpn-killswitch.deb
+```
+
+- CLI / non-desktop users:
+```bash
+git clone https://github.com/angela-d/vpn-killswitch.git ~/vpn-killswitch
+```
+
+### To run:
+- Desktop/GUI: Search for VPN Killswitch on your system to launch the config interface (only needs to be ran once, for initial config, then launch your torrent app as normal).
+- CLI (long way): `cd ~/vpn-killswitch/debian/source && ./vpn-check`
+- CLI (short way) Make a symbolic link so you can run `vpn-check` from anywhere, without needing to call the full file path or cd into a directory:
+```bash
+ln -s ~/vpn-killswitch/debian/source/vpn-check /usr/local/bin/vpn-check
+```
+
+That's it!   Your torrenting activity is now locked to your VPN.
 ***
-- ifconfig
 
-Check for it's existence in your terminal, by running:
-```bash
-whereis ifconfig
-```
-If you don't see a path returned, you'll need to install the net-tools package (this command is for Debian-based Linux systems.  If you're running a different distro/operating system, research what package offers ifconfig and install it):
-```bash
-apt update && apt install net-tools
-```
+The following details are for users not utiizing the GUI to configure their environment.
+## Pre-requisites (for manual setup / no GUI)
+
+- ifconfig (net-tools package on Debian/Ubuntu-based distros)
+
 * We need to know the torrent client's executable
 
 Launch the torrent application and then run the following in your terminal (replace *deluge* for the name of your torrent client -- also take note of the application launcher that the torrent client runs as; in my case, it's *deluge-gtk*):
@@ -47,20 +75,12 @@ Returns the following output:
 
 For my situation, **deluge-gtk** is my torrent client executable.
 
+Run `vpn-check` to get the default config initiated.  Then head to `~/.vpn-killswitch/config.cfg` to adjust settings to suit your environment.
 
 ***
-### Once these requirements are met, you're ready to use the VPN Killswitch.
 
-* Download/clone the **vpn-check** script somewhere.. I put mine in /home/angela/.config/vpn-killswitch/
+### Bind VPN Killswitch to Your Torrent Application (non-GUI)
 
-### Use Git to install the VPN Killswitch to ~/.config
-```bash
-git clone https://github.com/angela-d/vpn-killswitch.git ~/.config/vpn-killswitch
-```
-
-### Bind VPN Killswitch to Your Torrent Application
-***
-## If using the desktop version of Deluge: the following will force the launcher to bind with the killswitch
 This method utilizes the desktop application launcher; which will be different if you're running the torrent client as a headless application.
 - See if you have an existing launcher:
 ```bash
@@ -86,7 +106,7 @@ Exec="deluge-gtk %U"
 
 Change that line to point to your VPN Killswitch directory and the validation script:
 ```bash
-Exec=/home/angela/.config/vpn-killswitch/vpn-check %U
+Exec=/home/angela/vpn-killswitch/vpn-check %U
 ```
 `%U` allows arguments to be passed, such as URLs for downloads.  If your torrent client accepts magnets and downloads another way, adjust accordingly; as well as adjusting the additional `%U` pass inside `vpn-check` (if necessary).
 
@@ -108,7 +128,7 @@ In your terminal, navigate to the directory where VPN Killswitch is home to `cd 
 ```
 to set the validation.  If you want it to run in the background: `./vpn-check &`
 ***
-# Mandatory Config
+# Mandatory Config (non-GUI)
 Before you can use the script, you must modify the config variables to reflect your torrent client.
 - Open the vpn-check file and modify the following variables (if necessary):
 
@@ -121,12 +141,12 @@ CLIENT=deluge-gtk         # the torrent client path exposed in the ps aux comman
 ## That's it, you can now torrent without fear of leaking info to seeders or ISPs due to a lost VPN connection!
 
 
-### Optional Debug Mode
+### Optional Debug Mode (controllable via GUI, also)
 If you want to tweak your VPN Killswitch, you can enable debug mode to get verbose logging and follow the script's movements.
 - Open `vpn-check`
-- Change `DEBUG=0` to `DEBUG=1`
+- Change `DEBUG=FALSE` to `DEBUG=TRUE`
 - Launch your torrent application
-- View log output at `/your/vpn-killswitch/destination/[your torrent-client]-kill.log` ie. mine is at: `/home/angela/.config/vpn-killswitch/deluge-gtk-kill.log`
+- View log output at `/your/vpn-killswitch/destination/[your torrent-client]-kill.log` ie. mine is at: `/home/angela/vpn-killswitch/deluge-gtk-kill.log`
 
 To view live log output content, `tail -f` as `tail -f/home/angela/.config/vpn-killswitch/deluge-gtk-kill.log`
 
