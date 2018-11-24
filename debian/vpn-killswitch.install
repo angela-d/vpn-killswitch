@@ -1,0 +1,4 @@
+debian/source/vpn-check	/usr/bin
+debian/source/vpn-killswitch /usr/bin
+debian/source/vpn-killswitch.svg /usr/share/icons/hicolor/scalable/apps
+debian/source/vpn-killswitch.desktop /usr/share/applications

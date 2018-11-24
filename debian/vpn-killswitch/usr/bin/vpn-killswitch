@@ -1,0 +1,135 @@
+#!/bin/bash
+# gui management
+
+CFG=~/.vpn-killswitch/config.cfg
+
+# create a .desktop alias in ~/.local that we can modify without junking up the native desktop shortcut
+function desktop_test() {
+
+  SHORTCUT=$1
+
+  if [ ! "$2" == "" ];
+  then
+    CLEAN=${2%-*} # remove dashes, for *-gtk applications
+    UPDATED="$(find /usr/share/applications/ -name "$CLEAN*.desktop" -printf "%f\n")"
+    SHORTCUT="$UPDATED"
+  fi
+
+  if [ -f /usr/share/applications/"$SHORTCUT" ];
+  then
+
+    # test the ~/ directory for a .desktop file we can use; if not, copy one in
+    if [ ! -f ~/.local/share/applications/"$SHORTCUT" ];
+    then
+
+      cp /usr/share/applications/"$SHORTCUT" ~/.local/share/applications/"$SHORTCUT"
+    fi
+
+    # override the torrent client's desktop shortcut, so the killswitch can manage it
+    sed -i -- "s/Exec=[^ ]*/Exec=vpn-check/g" ~/.local/share/applications/"$SHORTCUT"
+    sed -i -- "s/DESKTOP=[^ ]*/DESKTOP=$SHORTCUT/g" ~/.vpn-killswitch/config.cfg
+  else
+
+    yad --image "important" \
+    --window-icon=vpn-killswitch
+    --title "VPN Killswitch Encountered Problems" \
+    --text "Required config for $2 was not found in /usr/share/applications.\n\nVPN Killswitch GUI will not work as expected.\n\n \
+    Please report this issue at:\n \
+    https://notabug.org/angela/vpn-killswitch/issues\n \
+    and try the CLI option, which doesn't have the same requirements as the GUI." \
+    --center
+    exit 1
+  fi
+}
+
+# using the pipe as a separator, parse the form input form the gui
+function parse_input() {
+  if [ "$RETURN_CODE" == 0 ];
+  then
+    for line in $1;
+    do
+      IFS='|'
+      option=($line)
+      echo "DEBUG=${option[0]}"
+      echo "IFCONFIG=${option[1]}"
+      echo "INTERFACE=${option[2]}"
+      echo "CLIENT=${option[3]}"
+      echo "DESKTOP=${option[4]}"
+      echo "CLI=${option[6]}"
+    done > "$CFG"
+    desktop_test "${option[4]}" "${option[3]}"
+  elif [ "$RETURN_CODE" == 2 ];
+  then
+    yad --info \
+    --window-icon=vpn-killswitch \
+    --title='About Killswitch Configuration' --image="config-users" \
+    --text "<b>VPN Killswitch</b>\n Developed by Angela D - https://github.com/angela-d \
+    GPL v2 only\nIf you dig this application, please share it with a friend and star on Github!\n
+    Icon by Oxygen Team @ oxygen-icons.org" \
+    --center
+  fi
+}
+
+# create the config file if it doesn't exist, in the user's home directory
+if [ ! -e ~/.vpn-killswitch/config.cfg ];
+then
+
+  mkdir ~/.vpn-killswitch
+
+  DEFAULT_CLIENT="$(xdg-mime query default application/x-bittorrent)"
+  # shellcheck disable=SC2002
+  # since we don't know what line the exe is going to be on, sed'ing to a specific line number won't work
+  EXE="$(cat /usr/share/applications/"$DEFAULT_CLIENT" | grep '^Exec' | grep -o '^\S*')"
+  APP=${EXE/Exec=/}
+
+  DEFAULTS="
+    DEBUG=FALSE               # excessive logging output to log file and terminal screen (when triggered direct) - use wisely!!
+    IFCONFIG=/sbin/ifconfig   # whereis ifconfig
+    INTERFACE=tun0            # ip a (while logged onto a vpn)
+    CLIENT=$APP               # ps aux | grep [name of torrent client]
+    CLI=FALSE                 # leave false/empty if you are using the desktop launcher method
+    DESKTOP=$DEFAULT_CLIENT   # the desktop shortcut file
+    FIRSTRUN=TRUE
+  "
+
+  echo -e "$DEFAULTS" > "$CFG"
+  desktop_test "$DEFAULT_CLIENT"
+fi
+
+# pull in the config so the default variables are set
+# shellcheck source=/dev/null
+. "$CFG"
+
+# see if the killswitch is currently active; populate variables accordingly
+if [ "$(pgrep -a vpn-check)" == '' ];
+then
+  ICON="vpn-killswitch"
+  TEXT="\nEnter information about your torrenting environment:"
+  RO=""
+  CHECKBOX="chk"
+else
+  ICON="important"
+  TEXT="The killswitch is currently running, you won't be able to modify details until its inactive."
+  RO="ro"
+  CHECKBOX="ro"
+fi
+
+WELCOME=$([ "$FIRSTRUN" == TRUE ] && echo "Since this is your first time running the killswitch, defaults were generated based on your system.
+<b>Please review and ensure everything is accurate.</b>" || echo "")
+FORM=$(yad --form --list --title='VPN Killswitch Configuration' --image="$ICON" \
+  --window-icon=vpn-killswitch \
+  --text="$WELCOME$TEXT" \
+  --field='Enable debug mode?':"$CHECKBOX" "$DEBUG" \
+  --field='Ifconfig path':"$RO" "$IFCONFIG" \
+  --field='Tunnel interface':"$RO" "$INTERFACE" \
+  --field='Torent client':"$RO" "$CLIENT" \
+  --field='Desktop shortcut':ro "$DESKTOP" \
+  --field="<small>The desktop shortcut is controlled by the torrent client field.</small>:BTN"\
+  --field='Enable CLI Mode?':"$CHECKBOX"  "$CLI" \
+  --button="About:2" \
+  --button="Save:0" \
+  --button="Cancel:1" \
+  --center);
+  RETURN_CODE=$?
+
+parse_input "$FORM"

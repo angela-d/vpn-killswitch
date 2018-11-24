@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VPN Killswitch
+GenericName=VPN Killswitch
+Comment=Protect your privacy while torrenting, even if your connection is lost.
+Icon=vpn-killswitch
+TryExec=vpn-killswitch
+Exec=vpn-killswitch
