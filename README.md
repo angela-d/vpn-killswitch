@@ -39,7 +39,7 @@ This script can also be *easily* modified to work with any application you want 
 # Install
 - Debian / Ubuntu-based distros: use the .deb installer:
 ```bash
-cd /tmp && wget https://github.com/angela-d/vpn-killswitch/blob/master/vpn-killswitch.deb -O vpn-killswitch.deb && apt install ./vpn-killswitch.deb
+wget https://github.com/angela-d/vpn-killswitch/blob/master/vpn-killswitch.deb?raw=true -O vpn-killswitch.deb
 ```
 
 - CLI / non-desktop users:
