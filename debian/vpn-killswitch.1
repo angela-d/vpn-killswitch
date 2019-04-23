@@ -1,0 +1,48 @@
+.de EX
+.ne 5
+.if n .sp 1
+.if t .sp .5
+.nf
+.in +.5i
+..
+.de EE
+.fi
+.in -.5i
+.if n .sp 1
+.if t .sp .5
+..
+.TH VPN Killswitch 1 "April 22, 2019"
+.SH NAME
+VPN Killswitch \- A killswitch to monitor your VPN tunnel.
+.SH SYNOPSIS
+.B vpn-killswitch
+.PP
+(Calling the killswitch directly will launch the GUI.)
+.SH DESCRIPTION
+Before the killswitch will work, you must set the configuration variables to match your torrenting environment.
+.PP
+This program has no commands for special usage, but you can figure out your torrenting environment with the following usage:
+.SS "Command reference:"
+.TP
+\fBwhereis ifconfig\fR
+Find the path to ifconfig, which is required to monitor the VPN tunnel.
+.TP
+\fBps aux | grep [torrent client name]\fR
+Returns the following output:
+    angela 2913 0.0 0.0 11176 2988 tty1 S+ 05:07 0:00 deluge-gtk.
+.P
+For my situation, deluge-gtk is my torrent client executable.
+.TP
+.TPfR
+.SH SEE ALSO
+None
+.SH BUGS
+See/report bugs at https://github.com/angela-d/vpn-killswitch/issues
+.SH AUTHOR
+The text for this page was written by Angela <angelad@disroot.org> for the Debian GNU/Linux system (but may be used by
+others).
+.SH COPYRIGHT
+Copyright  (C) 2019 Angela.  License GPLv2: GNU
+GPL version 2 only <http://gnu.org/licenses/gpl.html>.
+This is free software: you are free  to  change  and  redistribute  it.
+There is NO WARRANTY, to the extent permitted by law.

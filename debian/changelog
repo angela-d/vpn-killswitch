@@ -1,0 +1,5 @@
+vpn-killswitch (1.2.1) stable; urgency=low
+
+  * Manpage and repo cleanup
+
+  -- Angela <angelad@disroot.org> Mon, 22 Apr 2019 19:26:22 -0500

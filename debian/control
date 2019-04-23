@@ -1,0 +1,16 @@
+Source: vpn-killswitch
+Section: utils
+Priority: optional
+Maintainer: Angela <angelad@disroot.org>
+Build-Depends: debhelper, awk, sed, net-tools, yad (>= 0.38.2)
+Standards-Version: 3.9.8
+Vcs-Git: https://github.com/angela-d/vpn-killswitch.git
+Vcs-browser: https://github.com/angela-d/vpn-killswitch.git
+
+Package: vpn-killswitch
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends:
+Homepage: https://github.com/angela-d/vpn-killswitch
+Description: VPN Killswitch
+ Retain your privacy while torrenting, even if your VPN connection is lost.
